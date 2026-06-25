@@ -2,6 +2,7 @@ package main
 
 import (
 	"aldi_renewal/v2/browser"
+	"aldi_renewal/v2/cli"
 	"aldi_renewal/v2/math"
 	"encoding/json"
 	"flag"
@@ -46,13 +47,15 @@ const (
 var (
 	err error
 
-	offerId               = flag.String("offerId", "some-32-hex", "uuid of offer")
-	subscriptionId        = flag.String("subscriptionId", "12345678", "id of subscribition")
-	updateOfferResourceID = flag.String("updateOfferResourceID", "30", "update offer resource id")
+	offerId               = flag.String("offerId", "", "uuid of offer")
+	subscriptionId        = flag.String("subscriptionId", "", "id of subscribition")
+	updateOfferResourceID = flag.String("updateOfferResourceID", "", "update offer resource id")
 )
 
 func main() {
 	flag.Parse()
+
+	cli.CheckArguments(*offerId, *subscriptionId, *updateOfferResourceID)
 
 	for {
 		fmt.Println("Checking...", time.Now())
@@ -148,4 +151,13 @@ func addGB() error {
 	}
 
 	return nil
+}
+
+func mustAsk(prompt string) string {
+	var input string
+
+	fmt.Print(prompt + ": ")
+	fmt.Scanln(&input)
+
+	return input
 }
