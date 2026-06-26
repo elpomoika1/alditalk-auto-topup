@@ -42,6 +42,7 @@ type UpdateRequest struct {
 const (
 	offerUrl = "https://www.alditalk-kundenportal.de/scs/bff/scs-209-selfcare-dashboard-bff/selfcare-dashboard/v1/offers?contractId=%v&productType=Mobile_Product_Offer"
 	postUrl  = "https://www.alditalk-kundenportal.de/scs/bff/scs-209-selfcare-dashboard-bff/selfcare-dashboard/v1/offer/updateUnlimited"
+	loginUrl = "https://www.alditalk-kundenbetreuung.de/de"
 )
 
 var (
@@ -53,6 +54,7 @@ var (
 )
 
 func main() {
+	client := &http.Client{}
 	flag.Parse()
 
 	cli.CheckArguments(*offerId, *subscriptionId, *updateOfferResourceID)
@@ -60,23 +62,26 @@ func main() {
 	for {
 		fmt.Println("Checking...", time.Now())
 
-		err := checkAndTopUp()
+		err := checkAndTopUp(client)
 		if err != nil {
 			log.Println("Check failed:", err)
 		}
 
-		time.Sleep(10 * time.Minute)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
-func checkAndTopUp() error {
-	client := &http.Client{}
+func checkAndTopUp(client *http.Client) error {
+	if err := refreshSession(client); err != nil {
+		return err
+	}
 
 	contractId, err := browser.GetContractID(client)
 
 	req, err := browser.NewClientRequest(
 		"GET",
 		fmt.Sprintf(offerUrl, contractId),
+		"www.alditalk-kundenportal.de",
 		nil,
 	)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
@@ -91,6 +96,7 @@ func checkAndTopUp() error {
 
 	var packs Response
 
+	fmt.Print(resp.Body)
 	err = json.NewDecoder(resp.Body).Decode(&packs)
 	if err != nil {
 		log.Fatalf("decode: %v", err)
@@ -113,7 +119,7 @@ func checkAndTopUp() error {
 			}
 
 			fmt.Printf(
-				"%s: remain %.2f GB\n",
+				"\n%s: remain %.2f GB\n",
 				pack.BalanceAttributeReference,
 				remaining,
 			)
@@ -140,24 +146,42 @@ func addGB() error {
 
 	err = browser.PerformPost(
 		postUrl,
+		"www.alditalk-kundenportal.de",
 		jsonData,
 	)
 
 	if err != nil {
-		fmt.Println("Top up failed:", err)
+		fmt.Println("\nTop up failed:", err)
 		return err
 	} else {
-		fmt.Println("Success top up")
+		fmt.Println("\nSuccess top up")
 	}
 
 	return nil
 }
 
-func mustAsk(prompt string) string {
-	var input string
+func refreshSession(client *http.Client) error {
+	req, err := browser.NewClientRequest(
+		"GET",
+		loginUrl,
+		"www.alditalk-kundenbetreuung.de",
+		nil)
+	if err != nil {
+		log.Fatalf("Error while requesting login url: %v", err)
+		return err
+	}
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 
-	fmt.Print(prompt + ": ")
-	fmt.Scanln(&input)
+	browser.ApplyCookiesToReq(req, "www.alditalk-kundenbetreuung.de")
 
-	return input
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("final url:", resp.Request.URL)
+	fmt.Println("refresh status:", resp.Status)
+
+	return nil
 }

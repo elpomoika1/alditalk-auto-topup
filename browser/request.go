@@ -8,13 +8,13 @@ import (
 	"net/http/httputil"
 )
 
-func NewClientRequest(method, url string, body io.Reader) (*http.Request, error) {
+func NewClientRequest(method, url, domainPrefix string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	ApplyCookiesToReq(req)
+	ApplyCookiesToReq(req, domainPrefix)
 
 	req.Header.Set("User-Agent",
 		"Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0")
@@ -22,8 +22,8 @@ func NewClientRequest(method, url string, body io.Reader) (*http.Request, error)
 	return req, nil
 }
 
-func PerformPost(url string, jsonData []byte) error {
-	req, err := NewClientRequest("POST", url, bytes.NewBuffer(jsonData))
+func PerformPost(url, domainPrefix string, jsonData []byte) error {
+	req, err := NewClientRequest("POST", url, domainPrefix, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}

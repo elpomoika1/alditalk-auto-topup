@@ -2,6 +2,7 @@ package browser
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/browserutils/kooky"
@@ -14,11 +15,11 @@ type Cookie struct {
 	Path  string
 }
 
-func GetCookies() []Cookie {
+func GetCookies(domainPrefix string) []Cookie {
 	cookiesSeq := kooky.TraverseCookies(
 		context.TODO(),
 		kooky.Valid,
-		kooky.DomainHasPrefix("www.alditalk-kundenportal.de")).OnlyCookies()
+		kooky.DomainHasPrefix(domainPrefix)).OnlyCookies()
 
 	cookies := make([]Cookie, 0)
 
@@ -33,8 +34,9 @@ func GetCookies() []Cookie {
 	return cookies
 }
 
-func ApplyCookiesToReq(req *http.Request) {
-	cookies := GetCookies()
+func ApplyCookiesToReq(req *http.Request, domainPrefix string) {
+	cookies := GetCookies(domainPrefix)
+	fmt.Print(cookies)
 
 	for _, cookie := range cookies {
 		req.AddCookie(&http.Cookie{

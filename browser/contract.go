@@ -24,6 +24,7 @@ func GetContractID(client *http.Client) (string, error) {
 	req, err := NewClientRequest(
 		"GET",
 		contractIdUrl,
+		"www.alditalk-kundenportal.de",
 		nil,
 	)
 	if err != nil {

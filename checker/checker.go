@@ -30,6 +30,7 @@ func main() {
 	req, err := browser.NewClientRequest(
 		"GET",
 		fmt.Sprintf(offerUrl, contractId),
+		"www.alditalk-kundenportal.de",
 		nil,
 	)
 	req.Header.Set("Accept", "application/json, text/plain, */*")
